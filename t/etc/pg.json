@@ -1,0 +1,6 @@
+{
+  "db_pass": 1234,
+  "db_name": "mojo",
+  "db_user": "qwer",
+  "db_port": 3306
+}

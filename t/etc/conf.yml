@@ -1,0 +1,8 @@
+development:
+  static_path: public
+  templates_path: template
+  db_conf: t/etc/pg.json
+production:
+  static_path: /www/site/public
+  templates_path: /www/site/public/templates
+  db_conf: /www/etc/site/pg.yml

@@ -1,0 +1,62 @@
+=encoding utf8
+
+=head1 NAME
+
+Mojolicious::Plugin::ModeSwitcher - Configuration change by MOJO_MODE
+
+=head1 ARGUMENTS
+
+=over 4
+
+=item C<file>
+
+Autoload config from yml/json file
+
+=item C<dump>
+
+Preload configuration from yml/json
+
+=item C<reload>
+
+Reload configuration
+
+=item C<include>
+
+If your configuration has a file.(yml|json), ModeSwitcher replace the value of the contents of the file
+
+=back
+
+=head1 SPECIAL NAMES
+
+If your configuration has B<static_path> or B<templates_path>, ModeSwitcher will make the:
+
+=over 4
+
+  push @{ $app->renderer->paths }, $conf->{templates_path}
+  push @{ $app->static->paths },   $conf->{static_path}
+
+=back
+
+=head1 SYNOPSIS
+
+  $self->plugin( 'ModeSwitcher' );
+  ...
+  $self->switch_config( file => 'etc/conf.yml' );
+  ...
+  print self->stash( 'switch_config' )->{db_name};
+
+=head1 AUTHOR
+
+Grishkovelli L<grishkovelli@gmail.com>
+
+=head1 Git
+
+https://github.com/grishkovelli/Mojolicious-Plugin-ModeSwitcher
+
+=head1 COPYRIGHT
+
+Copyright (C) 2013, Grishkovelli.
+
+This library is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+
+=cut

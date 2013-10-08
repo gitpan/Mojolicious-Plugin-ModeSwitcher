@@ -1,0 +1,7 @@
+Build.PL
+Changes
+lib/Mojolicious/Plugin/ModeSwitcher.pm
+MANIFEST			This list of files
+README.pod
+t/main.t
+
