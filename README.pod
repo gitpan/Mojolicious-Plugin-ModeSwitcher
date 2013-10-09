@@ -6,42 +6,43 @@ Mojolicious::Plugin::ModeSwitcher - Configuration change by MOJO_MODE
 
 =head1 ARGUMENTS
 
-=over 4
+=head2 file
 
-=item C<file>
+Reads the yml/json stream from a file instead of a string
 
-Autoload config from yml/json file
-
-=item C<dump>
-
-Preload configuration from yml/json
-
-=item C<reload>
+=head2 reload
 
 Reload configuration
 
-=item C<include>
+=head2 include
 
 If your configuration has a file.(yml|json), ModeSwitcher replace the value of the contents of the file
 
-=back
+=head2 eval
+
+Eval code
 
 =head1 SPECIAL NAMES
 
 If your configuration has B<static_path> or B<templates_path>, ModeSwitcher will make the:
 
-=over 4
-
   push @{ $app->renderer->paths }, $conf->{templates_path}
   push @{ $app->static->paths },   $conf->{static_path}
-
-=back
 
 =head1 SYNOPSIS
 
   $self->plugin( 'ModeSwitcher' );
   ...
-  $self->switch_config( file => 'etc/conf.yml' );
+  $self->switch_config(
+    file => 'etc/conf.yml'
+    eval => {
+      development => {
+        code => '..',
+        key  => 'db'
+      },
+      production  => { code => '..' }
+    },
+  );
   ...
   print self->stash( 'switch_config' )->{db_name};
 

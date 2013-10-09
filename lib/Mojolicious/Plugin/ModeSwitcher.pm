@@ -1,8 +1,9 @@
 package Mojolicious::Plugin::ModeSwitcher;
 
 use Mojo::Base 'Mojolicious::Plugin';
+use Data::Dumper;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 sub register {
   my ( $plugin, $app ) = @_;
@@ -10,8 +11,7 @@ sub register {
   $app->helper(
     switch_config => sub {
       my ( $self, %arg ) = @_;
-      my $mode = $arg{mode} || $self->mode;
-      my $conf = {};
+      my $mode = $self->app->mode;
 
       if ( $arg{reload} ) {
         delete $self->stash->{'switch_config'};
@@ -19,8 +19,11 @@ sub register {
       }
 
       if ( !$self->stash( 'switch_config' ) ) {
-        if ( $arg{file} ) { $conf = _load_file( $arg{file}, $mode ); }
-        else              { $conf = $arg{dump}{$mode}; }
+        my $conf = {};
+
+        if ( $arg{file} && -r $arg{file} ) {
+          $conf = _load_file( $arg{file}, $mode );
+        }
 
         if ( !$conf->{_err} ) {
           if ( $arg{include} ) {
@@ -31,16 +34,19 @@ sub register {
           }
 
           if ( $arg{eval} && $arg{eval}{$mode} ) {
-            my $ret = eval $arg{eval}{$mode};
-            $self->stash(
-              switch_config     => $@ ? {} : $ret,
-              switch_config_err => $@ ? $@ : 0
-            );
-          }
+            my $ret = eval $arg{eval}{$mode}{code};
 
-          if ( $arg{cb} && $arg{cb}{$mode} ) {
-            my $ret_conf = $arg{cb}{$mode}->( $conf );
-            $self->stash( 'switch_config' => $ret_conf );
+            if ( $@ ) {
+              $conf->{switch_config_err} = $@;
+            }
+            else {
+              if ( $arg{eval}{$mode}{key} ) {
+                $conf->{ $arg{eval}{$mode}{key} } = $ret;
+              }
+              else {
+                $conf = $ret;
+              }
+            }
           }
 
           push @{ $app->renderer->paths }, $conf->{templates_path} if $conf->{templates_path};
@@ -49,7 +55,6 @@ sub register {
           $self->stash( switch_config => $conf );
         }
         else {
-          $self->stash( switch_config     => {} );
           $self->stash( switch_config_err => $conf->{_err} );
         }
       }
@@ -69,7 +74,7 @@ sub _load_package {
     eval "use $pkg";
     if ( !$@ ) {
       my $ret = $pkg . "::";
-      if    ( $pkg =~ /^YAML/ )                { $ret .= 'Load'; }
+      if ( $pkg =~ /^YAML/ ) { $ret .= 'Load'; }
       elsif ( $pkg ~~ [ 'JSON::XS', 'JSON' ] ) { $ret .= 'decode_json'; }
       else                                     { $ret .= 'decode'; }
       return { err => 0, name => $ret };
@@ -94,7 +99,7 @@ sub _load_file {
   my $pkg = _load_package( $ext );
   return { _err => $pkg->{err} } if $pkg->{err};
 
-  my $res = eval $pkg->{name} . "( '$src' )";
+  my $res = eval $pkg->{name} . '($src)';
   return { _err => $@ } if $@;
   return $res->{$mode} ? $res->{$mode} : $res;
 }
@@ -111,42 +116,43 @@ Mojolicious::Plugin::ModeSwitcher - Configuration change by MOJO_MODE
 
 =head1 ARGUMENTS
 
-=over 4
+=head2 file
 
-=item C<file>
+Reads the yml/json stream from a file instead of a string
 
-Autoload config from yml/json file
-
-=item C<dump>
-
-Preload configuration from yml/json
-
-=item C<reload>
+=head2 reload
 
 Reload configuration
 
-=item C<include>
+=head2 include
 
 If your configuration has a file.(yml|json), ModeSwitcher replace the value of the contents of the file
 
-=back
+=head2 eval
+
+Eval code
 
 =head1 SPECIAL NAMES
 
 If your configuration has B<static_path> or B<templates_path>, ModeSwitcher will make the:
 
-=over 4
-
   push @{ $app->renderer->paths }, $conf->{templates_path}
   push @{ $app->static->paths },   $conf->{static_path}
-
-=back
 
 =head1 SYNOPSIS
 
   $self->plugin( 'ModeSwitcher' );
   ...
-  $self->switch_config( file => 'etc/conf.yml' );
+  $self->switch_config(
+    file => 'etc/conf.yml'
+    eval => {
+      development => {
+        code => '..',
+        key  => 'db'
+      },
+      production  => { code => '..' }
+    },
+  );
   ...
   print self->stash( 'switch_config' )->{db_name};
 

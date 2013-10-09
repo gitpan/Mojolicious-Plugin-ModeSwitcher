@@ -1,4 +1,9 @@
 Revision history for Mojolicious-Plugin-ModeSwitcher
 
+0.02    09.10.2013
+        Removed work with callback
+        Fixed eval
+        Fixed pod
+
 0.01    08.10.2013
         First version
